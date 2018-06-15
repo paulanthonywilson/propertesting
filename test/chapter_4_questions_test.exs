@@ -4,10 +4,20 @@ defmodule Chapter4QuestionsTest do
 
   property "lists:seq produces a list of a range between a number and a larger or equal number" do
     check all start <- integer(),
-              count <- positive_integer() do
-      list = :lists.seq(start, start + count)
-      assert length(list) == count + 1
-      assert increments(list)
+              finish <- integer() do
+      case finish - start do
+        -1 ->
+          assert [] == :lists.seq(start, finish)
+
+        n when n >= 0 ->
+          list = :lists.seq(start, finish)
+          assert length(list) == n + 1
+          assert increments(list)
+
+        _ ->
+          # errors when finish - start < -1
+          assert_raise(FunctionClauseError, fn -> :lists.seq(start, finish) end)
+      end
     end
   end
 
