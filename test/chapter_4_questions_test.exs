@@ -26,12 +26,12 @@ defmodule Chapter4QuestionsTest do
   defp increments(n, [h | t]) when h == n + 1, do: increments(h, t)
   defp increments(_, _), do: false
 
-  property ":lists.keysort/2 sorts tuples" do
+  property "List.keysort/2 sorts tuples" do
     tuple_gen = tuple({integer(), string(:alphanumeric)})
 
     check all tuple_list <- list_of(tuple_gen),
-              order_by_element <- integer(1..2) do
-      sorted = :lists.keysort(order_by_element, tuple_list)
+              order_by_element <- integer(0..1) do
+      sorted = List.keysort(tuple_list, order_by_element)
 
       assert ordered_by_key(order_by_element, sorted)
 
@@ -44,9 +44,8 @@ defmodule Chapter4QuestionsTest do
   defp ordered_by_key(_n, _last, []), do: true
 
   defp ordered_by_key(n, last, [h | t]) do
-    # elem is zero indexed, unlike :lists.keysort/2
-    last_key = elem(last, n - 1)
-    key = elem(h, n - 1)
+    last_key = elem(last, n)
+    key = elem(h, n)
 
     if last_key > key do
       false
