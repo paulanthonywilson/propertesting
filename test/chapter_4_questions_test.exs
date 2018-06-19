@@ -27,9 +27,7 @@ defmodule Chapter4QuestionsTest do
   defp increments(_, _), do: false
 
   property "List.keysort/2 sorts tuples" do
-    tuple_gen = tuple({integer(), string(:alphanumeric)})
-
-    check all tuple_list <- list_of(tuple_gen),
+    check all tuple_list <- list_of({integer(), string(:alphanumeric)}),
               order_by_element <- integer(0..1) do
       sorted = List.keysort(tuple_list, order_by_element)
 
