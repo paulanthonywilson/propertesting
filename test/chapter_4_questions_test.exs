@@ -56,9 +56,11 @@ defmodule Chapter4QuestionsTest do
       set_a = :sets.from_list(list_a)
       set_b = :sets.from_list(list_b)
 
-      # Wrong because adding lists together and sorting does not get rid of duplicates,
-      # whereas sets remove duplicates.
-      model_union = :lists.sort(list_a ++ list_b)
+      model_union =
+        list_a
+        |> Enum.concat(list_b)
+        |> :lists.sort()
+        |> Enum.dedup()
 
       assert :lists.sort(:sets.to_list(:sets.union(set_a, set_b))) == model_union
     end
