@@ -50,19 +50,22 @@ defmodule Chapter4QuestionsTest do
     end
   end
 
-  property "prop set union <- should be failing" do
+  property "MapSet.union" do
     check all list_a <- list_of(integer()),
               list_b <- list_of(integer()) do
-      set_a = :sets.from_list(list_a)
-      set_b = :sets.from_list(list_b)
+      set_a = MapSet.new(list_a)
+      set_b = MapSet.new(list_b)
 
       model_union =
         list_a
         |> Enum.concat(list_b)
-        |> :lists.sort()
+        |> Enum.sort()
         |> Enum.dedup()
 
-      assert :lists.sort(:sets.to_list(:sets.union(set_a, set_b))) == model_union
+      assert set_a
+             |> MapSet.union(set_b)
+             |> MapSet.to_list()
+             |> Enum.sort() == model_union
     end
   end
 end
