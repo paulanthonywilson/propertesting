@@ -30,9 +30,7 @@ defmodule Chapter4QuestionsTest do
     check all tuple_list <- list_of({integer(), string(:alphanumeric)}),
               order_by_element <- integer(0..1) do
       sorted = List.keysort(tuple_list, order_by_element)
-
       assert ordered_by_key(order_by_element, sorted)
-
       assert length(tuple_list) == length(sorted)
     end
   end
@@ -49,6 +47,20 @@ defmodule Chapter4QuestionsTest do
       false
     else
       ordered_by_key(n, h, t)
+    end
+  end
+
+  property "prop set union <- should be failing" do
+    check all list_a <- list_of(integer()),
+              list_b <- list_of(integer()) do
+      set_a = :sets.from_list(list_a)
+      set_b = :sets.from_list(list_b)
+
+      # Wrong because adding lists together and sorting does not get rid of duplicates,
+      # whereas sets remove duplicates.
+      model_union = :lists.sort(list_a ++ list_b)
+
+      assert :lists.sort(:sets.to_list(:sets.union(set_a, set_b))) == model_union
     end
   end
 end
