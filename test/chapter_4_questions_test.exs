@@ -1,6 +1,7 @@
 defmodule Chapter4QuestionsTest do
   use ExUnit.Case
   use ExUnitProperties
+  import PropTestSupport
 
   property ":lists.seq/2 produces a list of a range between a number and a larger or equal number" do
     check all start <- integer(),
@@ -69,21 +70,45 @@ defmodule Chapter4QuestionsTest do
     end
   end
 
-  property "prop_dict_merge - too lax" do
-    check all list_a <- list_of({simple_term(), simple_term()}),
-              list_b <- list_of({simple_term(), simple_term()}) do
-      merged =
-        :dict.merge(fn _k, v1, _v2 -> v1 end, :dict.from_list(list_a), :dict.from_list(list_b))
+  property "map.merge - made tighter" do
+    check all map_a <- map_of(simple_term(), simple_term()),
+              map_b <- map_of(simple_term(), simple_term()) do
+      merged = Map.merge(map_a, map_b, fn _k, v1, _v2 -> v1 end)
 
-      # right now occasionally fails due to 0 and 0.0 not being considered
-      # equivalent as :dict keys, but being treated as equal by :lists.usort/1
-      assert extract_keys(:lists.sort(:dict.to_list(merged))) ==
-               :lists.usort(extract_keys(list_a ++ list_b))
+      # Merged keys are a combination of keys from both maps
+      assert merged
+             |> Map.keys()
+             |> Enum.sort() ==
+               map_a
+               |> Map.keys()
+               |> Enum.concat(Map.keys(map_b))
+               |> Enum.sort()
+               # sort of pointless as the chances of a key collision are quite low
+               |> Enum.dedup()
+
+      assert sorted_and_unique(Map.keys(merged)) ==
+               sorted_and_unique(Map.keys(map_a) ++ Map.keys(map_b))
+
+      {merge_kv_from_map_a, merge_kv_from_map_b} =
+        Enum.split_with(merged, fn {k, _v} -> Map.has_key?(map_a, k) end)
+
+      # All the values in Map 1 are present in the merged, as per the conflict resolution function
+      # provided Map.merge/3
+      assert element_counts(merge_kv_from_map_a) == element_counts(map_a)
+
+      map_b_value_set =
+        map_b
+        |> Map.values()
+        |> MapSet.new()
+
+      set_of_merged_values_from_map_b =
+        merge_kv_from_map_b
+        |> Enum.map(fn {_k, v} -> v end)
+        |> MapSet.new()
+
+      # All the values from keys not in map_a are from map_b - no conflict resolution applied
+      assert MapSet.subset?(set_of_merged_values_from_map_b, map_b_value_set)
     end
-  end
-
-  defp extract_keys(list) do
-    for t <- list, do: elem(t, 0)
   end
 
   # term can make compound data types, which too slow for me
