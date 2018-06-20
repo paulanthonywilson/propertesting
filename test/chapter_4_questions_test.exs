@@ -68,4 +68,26 @@ defmodule Chapter4QuestionsTest do
              |> Enum.sort() == model_union
     end
   end
+
+  property "prop_dict_merge - too lax" do
+    check all list_a <- list_of({simple_term(), simple_term()}),
+              list_b <- list_of({simple_term(), simple_term()}) do
+      merged =
+        :dict.merge(fn _k, v1, _v2 -> v1 end, :dict.from_list(list_a), :dict.from_list(list_b))
+
+      # right now occasionally fails due to 0 and 0.0 not being considered
+      # equivalent as :dict keys, but being treated as equal by :lists.usort/1
+      assert extract_keys(:lists.sort(:dict.to_list(merged))) ==
+               :lists.usort(extract_keys(list_a ++ list_b))
+    end
+  end
+
+  defp extract_keys(list) do
+    for t <- list, do: elem(t, 0)
+  end
+
+  # term can make compound data types, which too slow for me
+  defp simple_term() do
+    one_of([integer(), binary(max_length: 8), float(), boolean()])
+  end
 end
