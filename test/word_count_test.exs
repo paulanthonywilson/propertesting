@@ -8,12 +8,18 @@ defmodule WordCountTest do
     # implementation I generated a list of words and made that into a string, separated
     # by multiple instances of spaces
 
-    check all words_with_tabs_and_newlines <-
-                list_of(string([?a..?z, ?A..?Z, ?\t, ?\n], min_length: 1)),
-              separator <- string(?\s..?\s, min_length: 1) do
+    check all words_with_tabs_and_newlines <- word_list_including_non_space_whitespace_chars(),
+              separator <- strings_with_only_spaces() do
       string_with_words = Enum.join(words_with_tabs_and_newlines, separator)
-
       assert length(words_with_tabs_and_newlines) == WordCount.count(string_with_words)
     end
+  end
+
+  defp word_list_including_non_space_whitespace_chars() do
+    list_of(string([?a..?z, ?A..?Z, ?\t, ?\n], min_length: 1))
+  end
+
+  defp strings_with_only_spaces() do
+    string(?\s..?\s, min_length: 1)
   end
 end
