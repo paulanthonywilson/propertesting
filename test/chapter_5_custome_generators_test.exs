@@ -80,4 +80,45 @@ defmodule Chapter5CustomGeneratorsTest do
   defp queue do
     bind(list_of(integer()), fn i -> constant(:queue.from_list(i)) end)
   end
+
+  property "non empty" do
+    check all list_or_bin <- list_or_binary(), list_or_bin != [] && list_or_bin != <<>> do
+      cond do
+        is_list(list_or_bin) ->
+          assert length(list_or_bin) > 0
+
+        is_binary(list_or_bin) ->
+          assert byte_size(list_or_bin) > 0
+
+        true ->
+          flunk()
+      end
+    end
+  end
+
+  defp list_or_binary do
+    frequency([{1, list_of(integer())}, {1, binary()}])
+  end
+
+  property "text like" do
+    IO.puts("")
+    IO.puts("Text like")
+    IO.puts("________")
+
+    check all tl <- text_like(), max_runs: 13 do
+      IO.puts(Enum.join(tl, " "))
+    end
+  end
+
+  # To me this seems to generate more text like output than
+  # following the frequencies in the original
+  defp text_like do
+    list_of(
+      frequency([
+        {8, string([?a..?z, ?A..?Z], min_length: 1, max_length: 12)},
+        {1, string([?\n, ?., ?-, ?!, ?,], max_length: 1)},
+        {2, string(?0..?9)}
+      ])
+    )
+  end
 end
