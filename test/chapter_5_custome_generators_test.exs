@@ -16,49 +16,68 @@ defmodule Chapter5CustomGeneratorsTest do
   use ExUnitProperties
   import PropTestSupport
 
-  setup context do
-    %{test: test_name} = context
-    # Only for a single property as a proof of concept.
-    {:ok, stat_collector} = Agent.start(fn -> [] end)
+  describe "stats reporting proof of concept" do
+    setup context do
+      %{test: test_name} = context
+      # Only for a single property as a proof of concept.
+      {:ok, stat_collector} = Agent.start(fn -> [] end)
 
-    collect = fn value ->
-      Agent.update(stat_collector, fn values -> [value | values] end)
+      collect = fn value ->
+        Agent.update(stat_collector, fn values -> [value | values] end)
+      end
+
+      on_exit(fn ->
+        IO.puts("")
+        IO.puts(test_name)
+        IO.puts("------------")
+
+        stat_collector
+        |> Agent.get(fn values -> element_counts(values) end)
+        |> Enum.sort_by(fn {_value, count} -> count end)
+        |> Enum.map(fn {value, count} -> IO.puts("#{count}:\t#{inspect(value)}") end)
+
+        Agent.stop(stat_collector)
+      end)
+
+      {:ok, collector: collect}
     end
 
-    on_exit(fn ->
-      IO.puts("")
-      IO.puts(test_name)
-      IO.puts("------------")
+    property "mimics PropEr's `collect`", context do
+      %{collector: collect} = context
 
-      stat_collector
-      |> Agent.get(fn values -> element_counts(values) end)
-      |> Enum.sort_by(fn {_value, count} -> count end)
-      |> Enum.map(fn {value, count} -> IO.puts("#{count}:\t#{inspect(value)}") end)
+      check all bin <- binary() do
+        collect.(to_range(10, byte_size(bin)))
+      end
+    end
 
-      Agent.stop(stat_collector)
-    end)
+    property "collect with resize", context do
+      %{collector: collect} = context
 
-    {:ok, collector: collect}
-  end
+      check all bin <- resize(binary(), 150) do
+        collect.(to_range(25, byte_size(bin)))
+      end
+    end
 
-  property "mimics PropEr's `collect` as a proof of concept", context do
-    %{collector: collect} = context
-
-    check all bin <- binary() do
-      collect.(to_range(10, byte_size(bin)))
+    defp to_range(m, n) do
+      base = div(n, m)
+      {base * m, (base + 1) * m}
     end
   end
 
-  property "collect with resize", context do
-    %{collector: collect} = context
-
-    check all bin <- resize(binary(), 150) do
-      collect.(to_range(25, byte_size(bin)))
+  property "naive queue" do
+    check all list <- list_of(integer()) do
+      q = :queue.from_list(list)
+      assert :queue.is_queue(q)
     end
   end
 
-  defp to_range(m, n) do
-    base = div(n, m)
-    {base * m, (base + 1) * m}
+  property "nicer queue" do
+    check all q <- queue() do
+      assert :queue.is_queue(q)
+    end
+  end
+
+  defp queue do
+    bind(list_of(integer()), fn i -> constant(:queue.from_list(i)) end)
   end
 end
