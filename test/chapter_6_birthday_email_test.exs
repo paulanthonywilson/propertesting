@@ -28,11 +28,10 @@ defmodule Chapter6BirthdayEmailTest do
   defp entry(size, keys) do
     size
     |> record()
-    |> bind(fn vals ->
+    |> map(fn vals ->
       keys
       |> Enum.zip(vals)
       |> Enum.into(%{})
-      |> constant()
     end)
   end
 
